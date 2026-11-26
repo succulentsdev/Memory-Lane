@@ -113,8 +113,9 @@ function toMoment(g: Group, tripId: string, opts: ClusterOptions): Moment {
       if (x.t! < min.t!) min = x;
       if (x.t! > max.t!) max = x;
     }
-    startAt = new Date(min.t!).toISOString();
-    endAt = new Date(max.t!).toISOString();
+    // Keep the photos' own timestamps (with their UTC offset) so the card shows local time at the place.
+    startAt = min.iso!;
+    endAt = max.iso!;
   }
   const { coverPhotoId, favoriteIds } = pickCover(photos, opts.maxFavorites);
   return {

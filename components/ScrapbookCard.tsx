@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import { AnimatePresence, motion, useDragControls, useReducedMotion, type PanInfo } from "framer-motion";
 import type { Moment, Photo, Trip } from "@/lib/types";
 import { useStore } from "@/lib/store";
-import { cn, formatDateTime } from "@/lib/util";
+import { cn, formatDateTime, formatTime, localDay } from "@/lib/util";
 import ContextView from "@/components/ContextView";
 import { isAssistantEnabled, suggestMomentCaptions } from "@/lib/ai/assistant";
 
@@ -27,12 +27,6 @@ function useIsDesktop(): boolean {
 
 // ---------- helpers ----------
 
-function timeOnly(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
 function momentWhen(m: Moment): string {
   const start = formatDateTime(m.startAt);
   if (!m.endAt || m.endAt === m.startAt) return start;
@@ -40,8 +34,8 @@ function momentWhen(m: Moment): string {
   const e = new Date(m.endAt);
   if (Number.isNaN(e.getTime())) return start;
   if (Math.abs(e.getTime() - s.getTime()) < 60_000) return start;
-  const sameDay = s.toDateString() === e.toDateString();
-  return sameDay ? `${start} – ${timeOnly(m.endAt)}` : `${start} – ${formatDateTime(m.endAt)}`;
+  const sameDay = localDay(m.startAt) === localDay(m.endAt);
+  return sameDay ? `${start} – ${formatTime(m.endAt)}` : `${start} – ${formatDateTime(m.endAt)}`;
 }
 
 function isPortrait(p?: Photo): boolean {

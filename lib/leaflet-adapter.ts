@@ -25,9 +25,7 @@ import {
   tripRoute,
 } from "@/components/RouteLine";
 
-const TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+import { TILE_ATTRIBUTION_HTML, TILE_MAX_ZOOM, TILE_URL } from "@/lib/tiles";
 
 const DESKTOP_QUERY = "(min-width: 768px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -163,8 +161,8 @@ export class LeafletAdapter implements MapAdapter {
 
     this.tiles = L.tileLayer(TILE_URL, {
       subdomains: "abcd",
-      maxZoom: 20,
-      attribution: TILE_ATTRIBUTION,
+      maxZoom: TILE_MAX_ZOOM,
+      attribution: TILE_ATTRIBUTION_HTML,
       keepBuffer: 4,
       updateWhenZooming: false,
       className: "ml-tiles",

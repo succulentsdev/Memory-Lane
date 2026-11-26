@@ -3,7 +3,7 @@
 import exifr from "exifr";
 import type { Photo } from "@/lib/types";
 import { makeWebImages } from "@/lib/image";
-import { uid } from "@/lib/util";
+import { toLocalIso, uid } from "@/lib/util";
 
 const IMAGE_EXT = /\.(heic|heif|jpe?g|png|webp|gif|avif|tiff?|dng)$/i;
 const CONCURRENCY = 4;
@@ -38,13 +38,27 @@ function dmsToDecimal(v: unknown, ref: unknown): number | undefined {
   return deg;
 }
 
-function toIso(v: unknown): string | undefined {
-  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString();
+/** EXIF OffsetTime* value like "+02:00" → minutes east of UTC. */
+function offsetMinutes(v: unknown): number | undefined {
+  if (typeof v !== "string") return undefined;
+  const m = v.trim().match(/^([+-])(\d{2}):?(\d{2})$/);
+  if (!m) return undefined;
+  return (m[1] === "-" ? -1 : 1) * (+m[2] * 60 + +m[3]);
+}
+
+/**
+ * EXIF capture times are wall-clock times with no zone; exifr revives them as local Dates.
+ * Keep that wall-clock time and attach the camera's recorded offset when there is one,
+ * otherwise this device's offset.
+ */
+function toIso(v: unknown, offset?: number): string | undefined {
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return toLocalIso(v, offset);
   if (typeof v === "string") {
     // Raw EXIF form "YYYY:MM:DD HH:MM:SS" (when not revived).
     const m = v.match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
-    const d = m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : new Date(v);
-    if (!Number.isNaN(d.getTime())) return d.toISOString();
+    if (m) return toLocalIso(new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]), offset);
+    const d = new Date(v);
+    if (!Number.isNaN(d.getTime())) return toLocalIso(d);
   }
   return undefined;
 }
@@ -69,6 +83,8 @@ async function readMeta(file: File): Promise<ExifMeta> {
       ihdr: false,
       pick: [
         "DateTimeOriginal",
+        "OffsetTimeOriginal",
+        "OffsetTime",
         "CreateDate",
         "DateTimeDigitized",
         "ModifyDate",
@@ -86,7 +102,8 @@ async function readMeta(file: File): Promise<ExifMeta> {
       lat = dmsToDecimal(o.GPSLatitude, o.GPSLatitudeRef);
       lng = dmsToDecimal(o.GPSLongitude, o.GPSLongitudeRef);
     }
-    const takenAt = toIso(o.DateTimeOriginal) ?? toIso(o.CreateDate) ?? toIso(o.DateTimeDigitized);
+    const off = offsetMinutes(o.OffsetTimeOriginal) ?? offsetMinutes(o.OffsetTime);
+    const takenAt = toIso(o.DateTimeOriginal, off) ?? toIso(o.CreateDate, off) ?? toIso(o.DateTimeDigitized, off);
     return validCoord(lat, lng) ? { lat, lng, takenAt } : { takenAt };
   } catch {
     return {};
@@ -96,7 +113,7 @@ async function readMeta(file: File): Promise<ExifMeta> {
 function fallbackTime(file: File): string | undefined {
   if (!file.lastModified) return undefined;
   const d = new Date(file.lastModified);
-  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+  return Number.isNaN(d.getTime()) ? undefined : toLocalIso(d);
 }
 
 async function readOne(file: File): Promise<Photo | null> {

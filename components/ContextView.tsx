@@ -3,13 +3,14 @@
 import { useEffect, useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/util";
+import { TILE_ATTRIBUTION_TEXT, tileSrc } from "@/lib/tiles";
 
 /**
  * "What it looked like here": street-level imagery when a key is configured,
  * otherwise a static OpenStreetMap area snapshot. Loads nothing until opened.
  *
  * Provider order: Mapillary (NEXT_PUBLIC_MAPILLARY_TOKEN) → Google Street View
- * (NEXT_PUBLIC_GOOGLE_MAPS_KEY) → CARTO/OSM tile snapshot (default, no key).
+ * (NEXT_PUBLIC_GOOGLE_MAPS_KEY) → OpenStreetMap tile snapshot (default, no key).
  */
 
 // Read literally so Next.js inlines them at build time.
@@ -195,8 +196,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 // ---------- static area snapshot (no key) ----------
 
 const ZOOM = 17;
-const TILE = 256; // CSS px per tile; @2x images keep it crisp on retina
-const SUBDOMAINS = ["a", "b", "c", "d"];
+const TILE = 256; // CSS px per tile
 
 /** Slippy-map world position at ZOOM, in tile units (fractional). */
 function tilePosition(lat: number, lng: number): { x: number; y: number } {
@@ -223,10 +223,9 @@ function AreaSnapshot({ lat, lng, placeName }: ContextViewProps) {
       const col = (((tx + dx) % n) + n) % n;
       const row = ty + dy;
       if (row < 0 || row >= n) continue;
-      const sub = SUBDOMAINS[Math.abs(col + row) % SUBDOMAINS.length];
       tiles.push({
         key: `${dx},${dy}`,
-        src: `https://${sub}.basemaps.cartocdn.com/rastertiles/voyager/${ZOOM}/${col}/${row}@2x.png`,
+        src: tileSrc(ZOOM, col, row),
         left: (dx + 1) * TILE,
         top: (dy + 1) * TILE,
       });
@@ -273,7 +272,7 @@ function AreaSnapshot({ lat, lng, placeName }: ContextViewProps) {
         <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/25" />
 
         <div className="absolute bottom-0 right-0 rounded-tl-md bg-card/85 px-1.5 py-0.5 text-[10px] text-ink-soft">
-          © OpenStreetMap contributors © CARTO
+          {TILE_ATTRIBUTION_TEXT}
         </div>
       </div>
 

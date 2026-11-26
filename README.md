@@ -26,7 +26,7 @@ Optional keys go in `.env.local` (see `.env.example`). With none set, everything
 - **Upload:** drag and drop photos or a whole folder, or pick them (iPhone photo picker works). EXIF GPS and DateTimeOriginal are read with `exifr`; images are downscaled to 1600px web copies and 360px thumbnails in the browser. HEIC is read for metadata; it displays only where the browser can decode it (Safari).
 - **Clustering:** photos within a radius (default 150 m) and time window (default 90 min) become one moment. Adjustable under "Grouping" on the upload page.
 - **Best shot:** Laplacian variance on a 256px canvas, computed in a Web Worker (main-thread fallback). The sharpest photo becomes the pin's cover and the next sharpest fill up to 3 favorites. Swap the cover or star favorites on the card.
-- **Map:** Leaflet + CARTO Voyager tiles (no key), polaroid photo pins, a chronological route that draws in and slowly "marches", dashed connectors between trips, smooth fly-to between chapters.
+- **Map:** Leaflet + OpenStreetMap tiles (no key; swap provider with `NEXT_PUBLIC_TILE_URL`), polaroid photo pins, a chronological route that draws in and slowly "marches", dashed connectors between trips, smooth fly-to between chapters.
 - **Scrapbook card:** slide-over (right panel on desktop, draggable bottom sheet on phone) with photos, place name, date/time, a memory note, prev/next, and "What it looked like here".
 - **Context view:** Mapillary if `NEXT_PUBLIC_MAPILLARY_TOKEN` is set, else Google Street View if `NEXT_PUBLIC_GOOGLE_MAPS_KEY` is set, else a static OpenStreetMap area snapshot centered on the spot.
 - **Place names:** Nominatim reverse geocoding, throttled to 1 request/second and cached; falls back to coordinates.
